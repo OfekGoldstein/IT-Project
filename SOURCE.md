@@ -40,7 +40,7 @@
 - **Essence and Research Question:** Specialty coffee prices fluctuate based on origin country, processing method, and seasonal availability, but historical price tracking for micro-lot roasters is rarely archived. This project tracks live weekly price changes, flavor profiles, and bean availability across specialty coffee distributors to analyze how origin regions and processing methods impact retail pricing trends.
 - **Content:** JSON data containing active specialty coffee bean listings, origin countries, processing methods (e.g., washed, natural), flavor notes, package sizes, and current retail prices.
 - **URLs:** 
-  * API / Data Source: `https://api.coffeedb.pro/v1/coffee-lots`
+  * API / Data Source:`https://world.openfoodfacts.org/cgi/search.pl?search_terms=coffee&search_simple=1&action=process&json=1`
 - **Update Frequency:** Updated weekly; we will sample every 7 days via `cron`.
 - **Expected Sample Size:** Approximately 20 KB per weekly pull, yielding roughly 200 KB total over the semester (well below the 500MB course limit).
 - **API Key / Password Required:** No keys or passwords are required for the public API tier.
