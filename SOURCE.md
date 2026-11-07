@@ -37,7 +37,7 @@
   - It tracks live micro-lot specialty coffee prices and origin attributes over time, ensuring data is captured dynamically rather than relying on static historical archives.
 -->
 
-- **Essence and Research Question:** Specialty coffee prices fluctuate based on origin country, processing method, and seasonal availability, but historical price tracking for micro-lot roasters is rarely archived. This project tracks live weekly price changes, flavor profiles, and bean availability across specialty coffee distributors to analyze how origin regions and processing methods impact retail pricing trends over the semester.
+- **Essence and Research Question:** Specialty coffee prices fluctuate based on origin country, processing method, and seasonal availability, but historical price tracking for micro-lot roasters is rarely archived. This project tracks live weekly price changes, flavor profiles, and bean availability across specialty coffee distributors to analyze how origin regions and processing methods impact retail pricing trends.
 - **Content:** JSON data containing active specialty coffee bean listings, origin countries, processing methods (e.g., washed, natural), flavor notes, package sizes, and current retail prices.
 - **URLs:** 
   * API / Data Source: `https://api.coffeedb.pro/v1/coffee-lots`
