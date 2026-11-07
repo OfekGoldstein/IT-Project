@@ -29,3 +29,26 @@
     "wind_speed_10m": [3.6, 7.1, 11.0]
   }
 }
+
+
+### Proposal 2: Specialty Coffee Pricing & Origin Dynamics Across Global Roasters
+
+* **Essence and Research Question:** Specialty coffee prices fluctuate based on origin, processing method, and seasonal availability, but historical price tracking for micro-lot roasters is rarely archived. This project tracks live weekly price changes, flavor profiles, and bean availability across specialty coffee distributors to analyze how origin regions and processing methods impact retail pricing trends over the semester.
+* **Content:** JSON data containing active coffee bean listings, origin countries, processing methods (e.g., washed, natural), flavor notes, package sizes, and current retail prices.
+* **URLs:**
+  * API / Data Source: `https://api.coffeedb.pro/v1/coffee-lots`
+* **Update Frequency:** Updated weekly; we will script an automated fetch every 7 days via `cron`.
+* **Expected Sample Size:** Approximately 20 KB per weekly pull, yielding roughly 200 KB total over the semester (well below the 500MB course limit).
+* **API Key / Password Required:** Free public tier / no complex authentication required.
+* **Data Sample:**
+  ```json
+  {
+    "id": "lot_88492",
+    "roaster": "Sample Roastery",
+    "origin": "Colombia",
+    "region": "Huila",
+    "process": "Washed",
+    "price_usd": 21.50,
+    "weight_grams": 250,
+    "flavor_notes": ["jasmine", "peach", "panela"]
+  }
