@@ -48,12 +48,12 @@
 **Data Sample:**
 ```json
 {
-  "id": "lot_88492",
-  "roaster": "Sample Roastery",
+  "id": "bean_9976",
+  "roaster": "Specialty Roasters Global",
   "origin": "Colombia",
   "region": "Huila",
   "process": "Washed",
-  "price_usd": 21.50,
+  "price_usd": 22.00,
   "weight_grams": 250,
-  "flavor_notes": ["jasmine", "peach", "panela"]
+  "flavor_notes": ["caramel", "citrus", "chocolate"]
 }
