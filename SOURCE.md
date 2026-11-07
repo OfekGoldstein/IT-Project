@@ -41,7 +41,7 @@
 - **Content:** JSON data containing active specialty coffee bean listings, origin countries, processing methods (e.g., washed, natural), flavor notes, package sizes, and current retail prices.
 - **URLs:** 
   * API / Data Source: `https://api.coffeedb.pro/v1/coffee-lots`
-- **Update Frequency:** Updated weekly; we will script an automated fetch every 7 days via `cron`.
+- **Update Frequency:** Updated weekly; we will sample every 7 days via `cron`.
 - **Expected Sample Size:** Approximately 20 KB per weekly pull, yielding roughly 200 KB total over the semester (well below the 500MB course limit).
 - **API Key / Password Required:** No keys or passwords are required for the public API tier.
 
