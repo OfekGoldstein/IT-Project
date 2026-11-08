@@ -10,13 +10,13 @@
 -->
 
 * **Essence and Research Question:** Weather conditions (such as track temperature, wind speed,
-* and precipitation) heavily influence Formula 1 aerodynamics, tire degradation, and strategy,
-* yet rolling weather forecasts change constantly and are overwritten once sessions begin.
-* This project compares hourly weather forecasts for F1 circuit coordinates against actual on-track
-* weather measurements to analyze forecast convergence error and its impact on racing data.
-* **Content:** JSON data containing hourly forecasted air temperature, precipitation probability,
-* and wind speed for circuit coordinates, paired with actual track/air temperature sensor logs
-* from F1 sessions.
+  and precipitation) heavily influence Formula 1 aerodynamics, tire degradation, and strategy,
+  yet rolling weather forecasts change constantly and are overwritten once sessions begin.
+  This project compares hourly weather forecasts for F1 circuit coordinates against actual on-track
+  weather measurements to analyze forecast convergence error and its impact on racing data.
+  **Content:** JSON data containing hourly forecasted air temperature, precipitation probability,
+  and wind speed for circuit coordinates, paired with actual track/air temperature sensor logs
+  from F1 sessions.
 * **URLs:** 
   * Forecast Source: `https://api.open-meteo.com/v1/forecast?latitude=36.1147&longitude=-115.1728&hourly=temperature_2m,precipitation_probability,wind_speed_10m&timezone=UTC`
   * Actual Track Source: `https://api.openf1.org/v1/weather?session_key=latest`
@@ -59,7 +59,7 @@
 
 **Data Sample:**
 ```json
-Cafelix (first product):
+// Cafelix (first product):
 {
   "id": 15310,
   "name": "קולומביה – בורבון ורוד H – קלייה בהירה",
@@ -67,7 +67,7 @@ Cafelix (first product):
   "on_sale": false
 }
 
-Nomena (first coffee, first variant):
+// Nomena (first coffee, first variant):
 {
   "handle": "uraga",
   "vendor": "NOMENA",
@@ -76,3 +76,6 @@ Nomena (first coffee, first variant):
   "variants": [{ "title": "פולים שלמים / 250 גרם", "price": "58.00", "available": true }]
 }
 ```
+* Our rankings:
+* - 1. F1 Circuit Weather Forecasts vs. Actual Track Conditions
+    2. Specialty Coffee Roasters - Stock and Price Dynamics
