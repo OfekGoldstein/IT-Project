@@ -41,38 +41,38 @@
 }
 ```
 
-## Proposal 2: Specialty Coffee Pricing & Origin Dynamics Across Global Roasters
+## Proposal 2: Specialty Coffee Roasters - Stock and Price Dynamics
 <!-- 
   Why this works: 
   - It tracks live micro-lot specialty coffee prices and origin attributes over time,
   - ensuring data is captured dynamically rather than relying on static historical archives.
 -->
 
-- **Essence and Research Question:** Specialty coffee prices fluctuate based on origin country,
-- processing method, and seasonal availability, but historical price tracking for micro-lot roasters
-- is rarely archived. This project tracks live weekly price changes, flavor profiles,
-- and bean availability across specialty coffee distributors to analyze how origin regions
-- and processing methods impact retail pricing trends.
-- **Content:** JSON data containing active specialty coffee bean listings, origin countries,
-- processing methods (e.g., washed, natural), flavor notes, package sizes,
-- and current retail prices.
+- **Essence and Research Question:** Online coffee roasters release limited and seasonal coffee lots that sell out or change in price, but a shop only shows its current state; earlier availability and prices are not kept. This project saves the product feeds of two competing Tel Aviv specialty roasters, Nomena and Cafelix. It asks how long coffee lots stay in stock, how often products are added, removed, or repriced, and whether the two roasters sell out similar origins at similar times.
+- **Content:** JSON product catalogs: product name, tags and type, price per variant or bag size, regular and sale price, and an in-stock flag. The two shops use different platforms (Shopify and WooCommerce), so field names differ and will be normalized for analysis.
 - **URLs:** 
-  * API / Data Source: `https://roastdb.com/api/beans?origin=Colombia&include=references`
-- **Update Frequency:** Updated weekly; we will sample every 7 days via `cron`.
-- **Expected Sample Size:** Approximately 20 KB per weekly pull, yielding roughly 200 KB total
-- over the semester (well below the 500MB course limit).
+  - Roaster A (Nomena, Shopify product feed): `https://nomenaroasters.com/products.json?limit=250`
+  - Roaster B (Cafelix, WooCommerce public Store API): `https://cafelix.co.il/wp-json/wc/store/v1/products?per_page=100`
+- **Update Frequency:** Stock and catalog change irregularly. We will sample both once daily via `cron`.
+- **Expected Sample Size:** Approximately 500 KB per roaster per sample, yielding roughly 70 MB total over the semester (well below the 500MB course limit).
 - **API Key / Password Required:** No keys or passwords are required for the public API tier.
 
 **Data Sample:**
 ```json
+Cafelix (first product):
 {
-  "id": "bean_9976",
-  "roaster": "Specialty Roasters Global",
-  "origin": "Colombia",
-  "region": "Huila",
-  "process": "Washed",
-  "price_usd": 22.00,
-  "weight_grams": 250,
-  "flavor_notes": ["caramel", "citrus", "chocolate"]
+  "id": 15310,
+  "name": "קולומביה – בורבון ורוד H – קלייה בהירה",
+  "prices": { "price": "65", "regular_price": "65", "sale_price": "65", "currency_code": "ILS" },
+  "on_sale": false
+}
+
+Nomena (first coffee, first variant):
+{
+  "handle": "uraga",
+  "vendor": "NOMENA",
+  "product_type": "coffee",
+  "tags": ["Single origin"],
+  "variants": [{ "title": "פולים שלמים / 250 גרם", "price": "58.00", "available": true }]
 }
 ```
