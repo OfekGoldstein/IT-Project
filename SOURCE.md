@@ -77,5 +77,5 @@
 }
 ```
 * Our rankings:
-* - 1. F1 Circuit Weather Forecasts vs. Actual Track Conditions
-    2. Specialty Coffee Roasters - Stock and Price Dynamics
+  - 1. F1 Circuit Weather Forecasts vs. Actual Track Conditions (Preferred)
+    2. Specialty Coffee Roasters - Stock and Price Dynamics (Backup)
