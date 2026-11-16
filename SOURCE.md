@@ -1,81 +1,77 @@
-# Project Data Source Proposals
+# SOURCE.md — F1 Circuit Weather Forecast vs. Live Track Telemetry
 
-## Proposal 1 (Preferred): F1 Circuit Weather Forecasts vs. Actual Track Conditions
-<!-- 
-  Why this works: 
-  - It pairs a predictive forecast source (Open-Meteo) with an actual telemetry/condition source
-  - (OpenF1).
-  - Weather forecasts and atmospheric conditions change continuously year-round,
-  - making it fully immune to the off-season pause.
--->
+## i. Approved Data Sources
 
-* **Essence and Research Question:** Weather conditions (such as track temperature, wind speed,
-  and precipitation) heavily influence Formula 1 aerodynamics, tire degradation, and strategy,
-  yet rolling weather forecasts change constantly and are overwritten once sessions begin.
-  This project compares hourly weather forecasts for F1 circuit coordinates against actual on-track
-  weather measurements to analyze forecast convergence error and its impact on racing data.
-* **Content:** JSON data containing hourly forecasted air temperature, precipitation probability,
-  and wind speed for circuit coordinates, paired with actual track/air temperature sensor logs
-  from F1 sessions.
-* **URLs:** 
-  * Forecast Source: `https://api.open-meteo.com/v1/forecast?latitude=36.1147&longitude=-115.1728&hourly=temperature_2m,precipitation_probability,wind_speed_10m&timezone=UTC`
-  * Actual Track Source: `https://api.openf1.org/v1/weather?session_key=latest`
-* **Update Frequency:** Forecasts update hourly;
-  we will sample every 3 hours (8 times daily) via `cron`.
-* **Expected Sample Size:** Approximately 4 KB per sample, yielding roughly 7 MB total
-  over the semester (well below the 500MB course limit).
-* **API Key / Password Required:** No keys or passwords are required for either public API.
+| Name | URL / Endpoint | Data Format | Auth / API Key Required | License | Sampling Frequency |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Open-Meteo Forecast API** (Primary Source) | `https://api.open-meteo.com/v1/forecast` | JSON | No | CC BY 4.0 (Open-Source, Non-Commercial) | Every 15 minutes during race weeks / hourly on off-weeks |
+| **OpenF1 Live Telemetry API** (Integrated Source) | `https://api.openf1.org/v1/weather`, `/v1/laps`, `/v1/stints` | JSON | No | Open-Source / Free Public API | Every 5–15 minutes during active F1 sessions |
 
-**Data Sample:**
-```json
-{
-  "latitude": 36.106308,
-  "longitude": -115.16396,
-  "timezone": "GMT",
-  "hourly": {
-    "time": ["2026-11-04T00:00", "2026-11-04T01:00", "2026-11-04T02:00"],
-    "temperature_2m": [19.1, 17.3, 16.2],
-    "precipitation_probability": [0, 0, 0],
-    "wind_speed_10m": [3.6, 7.1, 11.0]
-  }
-}
-```
+## ii. Data Collected from the Sources
 
-## Proposal 2: Specialty Coffee Roasters - Stock and Price Dynamics
-<!-- 
-  Why this works: 
-  - It tracks live micro-lot specialty coffee prices and origin attributes over time,
-  - ensuring data is captured dynamically rather than relying on static historical archives.
--->
+We collect two complementary streams of data around Formula 1 Grand Prix weekends (starting with the Las Vegas, Qatar, and Abu Dhabi GPs and post-season testing):
+1. **Meteorological Forecasts (`Open-Meteo`):** Current and hourly forecasted air temperature, relative humidity, surface air pressure, precipitation probability, precipitation amount, wind speed, and wind direction at the exact GPS coordinates of the active F1 circuit. Because weather forecasts are overwritten with each model run, these snapshots disappear over time and cannot be retrieved retroactively.
+2. **Live Track Telemetry & Strategy (`OpenF1`):** Real-time track surface temperature, ambient air temperature, wind speed, rainfall status, driver lap times (`/laps`), and tire compound stint data (`/stints`) recorded during official F1 sessions.
 
-- **Essence and Research Question:** Online coffee roasters release limited and seasonal coffee lots that sell out or change in price, but a shop only shows its current state; earlier availability and prices are not kept. This project saves the product feeds of two competing Tel Aviv specialty roasters, Nomena and Cafelix. It asks how long coffee lots stay in stock, how often products are added, removed, or repriced, and whether the two roasters sell out similar origins at similar times.
-- **Content:** JSON product catalogs: product name, tags and type, price per variant or bag size, regular and sale price, and an in-stock flag. The two shops use different platforms (Shopify and WooCommerce), so field names differ and will be normalized for analysis.
-- **URLs:** 
-  - Roaster A (Nomena, Shopify product feed): `https://nomenaroasters.com/products.json?limit=250`
-  - Roaster B (Cafelix, WooCommerce public Store API): `https://cafelix.co.il/wp-json/wc/store/v1/products?per_page=100`
-- **Update Frequency:** Stock and catalog change irregularly. We will sample both once daily via `cron`.
-- **Expected Sample Size:** Approximately 500 KB per roaster per sample, yielding roughly 70 MB total over the semester (well below the 500MB course limit).
-- **API Key / Password Required:** No keys or passwords are required for the public API tier.
+## iii. Unified Dataset Schema (`data/dataset.csv`)
 
-**Data Sample:**
-```json
-// Cafelix (first product):
-{
-  "id": 15310,
-  "name": "קולומביה – בורבון ורוד H – קלייה בהירה",
-  "prices": { "price": "65", "regular_price": "65", "sale_price": "65", "currency_code": "ILS" },
-  "on_sale": false
-}
+All raw JSON snapshots are normalized into a single flat table (`data/dataset.csv`) with the following columns:
 
-// Nomena (first coffee, first variant):
-{
-  "handle": "uraga",
-  "vendor": "NOMENA",
-  "product_type": "coffee",
-  "tags": ["Single origin"],
-  "variants": [{ "title": "פולים שלמים / 250 גרם", "price": "58.00", "available": true }]
-}
-```
-* Our rankings:
-  - 1. F1 Circuit Weather Forecasts vs. Actual Track Conditions (Preferred)
-    2. Specialty Coffee Roasters - Stock and Price Dynamics (Backup)
+| Column Name | Content Description | Units |
+| :--- | :--- | :--- |
+| `sample_timestamp_utc` | Exact UTC timestamp when the sample was collected | ISO-8601 (`YYYY-MM-DDTHH:MM:SSZ`) |
+| `circuit_name` | Name of the Formula 1 circuit being sampled | String (e.g., `Las_Vegas`, `Lusail`, `Yas_Marina`) |
+| `forecast_air_temp_c` | Forecasted ambient air temperature at 2 meters above ground (`Open-Meteo`) | Degrees Celsius (`°C`) |
+| `forecast_humidity_pct` | Forecasted relative humidity at 2 meters (`Open-Meteo`) | Percentage (`%`, `0–100`) |
+| `forecast_precip_mm` | Forecasted precipitation amount (`Open-Meteo`) | Millimeters (`mm`) |
+| `forecast_precip_prob_pct` | Forecasted probability of precipitation (`Open-Meteo`) | Percentage (`%`, `0–100`) |
+| `forecast_wind_speed_kmh` | Forecasted wind speed at 10 meters above ground (`Open-Meteo`) | Kilometers per hour (`km/h`) |
+| `forecast_wind_dir_deg` | Forecasted wind direction at 10 meters (`Open-Meteo`) | Degrees (`0–360°`) |
+| `forecast_pressure_hpa` | Forecasted atmospheric surface pressure (`Open-Meteo`) | Hectopascals (`hPa`) |
+| `actual_air_temp_c` | Measured ambient air temperature at the circuit (`OpenF1`) | Degrees Celsius (`°C`) |
+| `actual_track_temp_c` | Measured asphalt track surface temperature (`OpenF1`) | Degrees Celsius (`°C`) |
+| `actual_wind_speed_ms` | Measured trackside wind speed (`OpenF1`) | Meters per second (`m/s`) |
+| `actual_rainfall` | Binary/numeric indicator of active rainfall on track (`OpenF1`) | Boolean / Integer (`0` or `1`) |
+| `session_key` | Unique F1 session identifier (`OpenF1`) | Integer ID |
+| `driver_number` | FIA car number of the sampled driver (`OpenF1`) | Integer (`1–99`) |
+| `lap_duration_sec` | Completed lap time duration (`OpenF1`) | Seconds (`s`, float) |
+| `tire_compound` | Active Pirelli tire compound during the stint (`OpenF1`) | Categorical String (`SOFT`, `MEDIUM`, `HARD`, `INTERMEDIATE`, `WET`) |
+| `tyre_age_laps` | Number of laps completed on the current set of tires (`OpenF1`) | Integer (`laps`) |
+
+## iv. Justification for Column Selection and Omitted Fields
+
+- **Why these columns were kept:** The selected fields allow us to (1) directly evaluate `Open-Meteo` forecast accuracy against actual `OpenF1` trackside sensors (air temperature, wind, precipitation), and (2) quantify how wind gusts and track temperature shifts affect car pace (`lap_duration_sec`) and tire degradation (`tire_compound`, `tyre_age_laps`).
+- **Why other fields were omitted:**
+  - From `Open-Meteo`, we omit metadata fields (`generationtime_ms`, `utc_offset_seconds`, `elevation`, and unit-definition objects like `current_units` / `hourly_units`) because they are static across every pull and add redundant bloat to `dataset.csv`.
+  - From `OpenF1`, we omit high-frequency mini-sector arrays (`segments_sector_1`, `segments_sector_2`, `segments_sector_3`) and raw car telemetry (`rpm`, `throttle`, `brake`), as they are not needed for macro weather-strategy correlation and would unnecessarily inflate storage size.
+
+## v. Field Name Translation Table
+
+| Source | Original Source Field Path (JSON) | Schema Column Name (`dataset.csv`) |
+| :--- | :--- | :--- |
+| `Open-Meteo` | `current.time` / `hourly.time` | `sample_timestamp_utc` |
+| `Open-Meteo` | `current.temperature_2m` | `forecast_air_temp_c` |
+| `Open-Meteo` | `current.relative_humidity_2m` | `forecast_humidity_pct` |
+| `Open-Meteo` | `current.precipitation` | `forecast_precip_mm` |
+| `Open-Meteo` | `hourly.precipitation_probability` | `forecast_precip_prob_pct` |
+| `Open-Meteo` | `current.wind_speed_10m` | `forecast_wind_speed_kmh` |
+| `Open-Meteo` | `current.wind_direction_10m` | `forecast_wind_dir_deg` |
+| `Open-Meteo` | `current.surface_pressure` | `forecast_pressure_hpa` |
+| `OpenF1` | `date` / `session_key` | `sample_timestamp_utc` / `session_key` |
+| `OpenF1` | `air_temperature` | `actual_air_temp_c` |
+| `OpenF1` | `track_temperature` | `actual_track_temp_c` |
+| `OpenF1` | `wind_speed` | `actual_wind_speed_ms` |
+| `OpenF1` | `rainfall` | `actual_rainfall` |
+| `OpenF1` | `driver_number` | `driver_number` |
+| `OpenF1` | `lap_duration` | `lap_duration_sec` |
+| `OpenF1` | `compound` | `tire_compound` |
+| `OpenF1` | `tyre_age_at_start` + lap offset | `tyre_age_laps` |
+
+## vi. Expected Storage Size Over a Full Semester
+
+- **Single Raw Sample Size:** One `Open-Meteo` JSON response is approximately **6 KB**, and an active session `OpenF1` snapshot (weather + latest stint/lap summary) is approximately **25 KB–40 KB**.
+- **Sampling Volume Across the Semester (13 Weeks):**
+  - Sampling `Open-Meteo` hourly (24 samples/day × 90 days = 2,160 files) × 6 KB ≈ **13 MB**.
+  - Sampling `OpenF1` + `Open-Meteo` every 5 minutes during ~25 hours of live track sessions (300 high-frequency samples × 40 KB) ≈ **12 MB**.
+- **Total Expected `raw/` Directory Size:** **~25 MB** (uncompressed), which is 5% of the 500 MB course limit.
+- **Total Expected `data/dataset.csv` Size:** Approximately 15,000–25,000 normalized CSV rows × ~120 bytes per row ≈ **2 MB–3 MB**.
