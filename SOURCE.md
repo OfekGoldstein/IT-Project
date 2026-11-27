@@ -9,7 +9,7 @@ This file describes our data sources, what we collect, the schema of `data/datas
 
 | Name | Address | Data format | Key or username required | License | Sampling frequency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Open-Meteo Forecast API** (primary source) | `https://api.open-meteo.com/v1/forecast` | JSON | No | Data: CC BY 4.0 (attribution required). Free API: non-commercial use, under 10,000 calls/day | Course server `cron`: every 5 minutes (`*/5 * * * *`) during race weekends (starting with Las Vegas, 19–22 Nov UTC, to evaluate whether sub-hourly sampling adds value) and hourly (`0 * * * *`) outside race windows |
+| **Open-Meteo Forecast API** (primary source) | `https://api.open-meteo.com/v1/forecast` | JSON | No | Data: CC BY 4.0 (attribution required). Free API: non-commercial use, under 10,000 calls/day | Course server `cron`: every 5 minutes (`*/5 * * * *`) during all three race weekends and hourly (`0 * * * *`) outside them |
 | **OpenF1 API** (second source) | `https://api.openf1.org/v1/sessions`, `/v1/weather`, `/v1/laps`, `/v1/stints` | JSON | No (free historical endpoints only; paid live tier is not used) | CC BY-NC-SA 4.0; intended for educational and non-commercial use | Checked on every `collect.sh` run, but each finished session is downloaded and stored only once: at the first run at least 45 minutes after the session ends (OpenF1's free historical tier starts 30 minutes after the end) |
 
 * **Attribution:** The final site will show a visible credit link to Open-Meteo next to the weather data and link to `openf1.org` as well.
@@ -27,7 +27,7 @@ This file describes our data sources, what we collect, the schema of `data/datas
    On every run, `bin/collect.sh` asks OpenF1 which session is the latest (`/v1/sessions?session_key=latest`). Only if that session ended at least 45 minutes ago (OpenF1's free historical tier starts 30 minutes after the end) and no earlier file already stores it does the script also download the session's `/v1/weather`, `/v1/laps` and `/v1/stints`: measured air temperature, asphalt track temperature, wind speed, rainfall status, driver lap durations and tire stint records. Each session is therefore stored exactly once. Requesting `session_key=latest` data on every run would store the same finished session (about 0.75 MB for a race) hundreds of times. In all other files these fields are `null`: `null` means not fetched or the request failed, `[]` means OpenF1 returned an empty list. OpenF1 retains historical sessions from the 2023 season onward.
 
 3. **Raw file storage (`raw/YYYY-mm-dd/HHMM.json`).**
-   Each `collect.sh` execution saves one JSON bundle at `raw/YYYY-mm-dd/HHMM.json` (UTC) with the verbatim responses under the keys `open_meteo` (one object per circuit), `openf1_session`, `openf1_weather`, `openf1_laps` and `openf1_stints`, plus `openf1_stored_session_key` (the session whose data is stored in this file, otherwise `null`). A file is written to `raw/` only when it is complete and valid JSON, and an existing file is never overwritten. *(Note: the early manual baseline samples from 16 Nov 2026 onward store the single-circuit Las Vegas Open-Meteo response directly at the root; `normalise.sh` handles both formats.)*
+   Each `collect.sh` execution saves one JSON bundle at `raw/YYYY-mm-dd/HHMM.json` (UTC) with the verbatim responses under the keys `open_meteo` (one object per circuit), `openf1_session`, `openf1_weather`, `openf1_laps` and `openf1_stints`, plus `openf1_stored_session_key` (the session whose data is stored in this file, otherwise `null`). A file is written to `raw/` only when it is complete and valid JSON, and an existing file is never overwritten. *(Note: the first three manual samples (16–18 Nov 2026) store the single-circuit Las Vegas Open-Meteo response directly at the root; the fourth manual sample (19 Nov, 07:26 UTC) is already a bundle; `normalise.sh` handles both formats.)*
 
 ## iii. Schema of `data/dataset.csv`
 
@@ -79,7 +79,7 @@ This file describes our data sources, what we collect, the schema of `data/datas
 | `Open-Meteo` | `hourly.precipitation[i]` | `precip_mm` | Direct value |
 | `Open-Meteo` | `hourly.wind_speed_10m[i]` | `wind_speed_kmh` | Direct value |
 | `Open-Meteo` | `hourly.wind_direction_10m[i]` | `wind_dir_deg` | Direct value |
-| `OpenF1 /v1/sessions` | `circuit_short_name` (field name to confirm) | `circuit_name` (OpenF1 rows) | Mapped through the same circuit lookup table; the weather, laps and stints endpoints carry no circuit name |
+| `OpenF1 /v1/sessions` | `circuit_short_name` | `circuit_name` (OpenF1 rows) | Mapped through the same circuit lookup table (value `Las Vegas` in the five Las Vegas sessions); the weather, laps and stints endpoints carry no circuit name |
 | `OpenF1 /v1/weather` | `air_temperature` | `actual_air_temp_c` | Hourly mean per circuit |
 | `OpenF1 /v1/weather` | `track_temperature` | `actual_track_temp_c` | Hourly mean per circuit |
 | `OpenF1 /v1/weather` | `wind_speed` | `actual_wind_speed_kmh` | Hourly mean per circuit, multiplied by `3.6` (`m/s` → `km/h`) |
@@ -90,23 +90,25 @@ This file describes our data sources, what we collect, the schema of `data/datas
 
 ## vi. Expected size
 
-* **Assumptions:** 13-week semester (90 days), consisting of ~81 days of hourly collection (`81 × 24 = 1,944` runs) plus ~9 days across the 3 race weekends sampled every 5 minutes (`9 × 288 = 2,592` runs) = **4,536 total runs** (or **2,160 runs** if reverted to hourly all semester after the Las Vegas evaluation). One single-circuit `Open-Meteo` response is **7,424 bytes** (measured on `raw/2026-11-16/1659.json`), so three circuits are **~22,272 bytes** (~21.8 KB) per run.
+* **Assumptions:** 13-week semester (90 days), consisting of ~81 days of hourly collection (`81 × 24 = 1,944` runs) plus ~9 days across the 3 race weekends sampled every 5 minutes (`9 × 288 = 2,592` runs) = **4,536 total runs**. One single-circuit `Open-Meteo` response is **7,424 bytes** (measured on `raw/2026-11-16/1659.json`), so three circuits are **~22,272 bytes** (~21.8 KB) per run.
 
 | Item | Calculation | Size |
 | :--- | :--- | :--- |
-| `raw/` (`Open-Meteo`, 3 circuits — hourly baseline) | `2,160 × 22,272 B` | ~48.1 MB |
-| `raw/` (`Open-Meteo`, 3 circuits — with 3 race weekends at 5-min cadence) | `4,536 × 22,272 B` | ~101.0 MB |
+| `raw/` (`Open-Meteo`, 3 circuits — 5-minute during the 3 race weekends, hourly otherwise) | `4,536 × 22,272 B` | ~101.0 MB |
 | `raw/` (`OpenF1`, each session stored once: about 0.75 MB for a race, less for practice and qualifying) | about 16 sessions (15 weekend sessions + the latest finished session at the first run) × at most 0.75 MB | ≤ ~12 MB |
-| `data/dataset.csv` (3 circuits, 7 lead times) | `4,536 × 3 × 7 = 95,256 rows × ~95 B` | ~9.1 MB (~4.3 MB if hourly all semester) |
+| `data/dataset.csv` (3 circuits, 7 lead times) | `4,536 × 3 × 7 = 95,256 rows × ~95 B` | ~9.1 MB |
 
 With OpenF1 stored once per session, the whole `raw/` folder stays around 115 MB (under a quarter of the 500 MB course limit), even with 5-minute collection on all three race weekends.
+
+Measured on the Las Vegas weekend: 21.93 MB for 19–22 Nov (878 files), about 6.4–6.9 MB per 5-minute day and about 0.5 MB per hourly day.
 
 ## vii. Limitations
 
 * **`Open-Meteo` rate limits and grid snapping:** The free API is for non-commercial use under 10,000 calls/day (`5,000/hour`, `600/minute`); even 5-minute collection needs only 288 requests/day (3 locations each, so at most 864 counted calls). Values are gridded model outputs—the coordinates returned in each response snap to the nearest model grid cell (for example, Las Vegas `36.1147, -115.1728` snaps to `36.106308, -115.16396`), not the exact pit-lane sensor location. Times are returned in GMT, which equals UTC.
-* **Missed collections:** The live Forecast API keeps only the newest model run, so a missed collection cannot be recovered retroactively. Gaps stay gaps and are not imputed.
-* **`OpenF1` historical window and rate limits:** OpenF1 classifies data as live from 30 minutes before a session starts until 30 minutes after it ends; live access requires a paid sponsor account, which we do not use. Outside that window, historical data is free without authentication (up to 3 requests/second and 30/minute) from the 2023 season onward. OpenF1 is an unofficial project, not affiliated with Formula 1. Because `collect.sh` follows `session_key=latest`, a session whose free window opens only after the next session has already started would be missed; sessions are normally hours apart and OpenF1's history is permanent, so a later version of `collect.sh` can backfill any missed session.
+* **Missed collections:** The live Forecast API keeps only the newest model run, so a missed collection cannot be recovered retroactively. Gaps stay gaps and are not imputed. During the Las Vegas weekend, 21 of 897 expected 5-minute runs are missing (20 of them at minute `:00`); in the following hourly period 10 of 47 runs are missing, all at `:00`.
+* **`OpenF1` historical window and rate limits:** OpenF1 classifies data as live from 30 minutes before a session starts until 30 minutes after it ends; live access requires a paid sponsor account, which we do not use. Outside that window, historical data is free without authentication (up to 3 requests/second and 30/minute) from the 2023 season onward. OpenF1 is an unofficial project, not affiliated with Formula 1. Because `collect.sh` follows `session_key=latest`, a session whose free window opens only after the next session has already started would be missed; sessions are normally hours apart and OpenF1's history is permanent, so a later version of `collect.sh` can backfill any missed session. In practice, the `/v1/sessions` request returned no usable data in all 132 runs inside the five Las Vegas live windows, and succeeded in every run outside them (through 24 Nov 2026).
 * **Sparse ground-truth session windows:** Measured circuit telemetry exists only during official F1 sessions (~5 sessions per weekend across the 3 remaining weekends). Because the 2026 F1 season concludes on 6 December, forecasts collected after that date have no `OpenF1` measured counterpart.
-* **Las Vegas early-lead coverage:** Forecasts for the Las Vegas weekend combine manual samples taken once a day from 16 Nov (providing multi-day lead times) with automated collection starting on Thursday, 19 Nov, on the course server or on the team's virtual machine if the server is not ready in time.
+* **Las Vegas early-lead coverage:** Forecasts for the Las Vegas weekend combine four manual samples taken on 16–19 Nov with automated collection on the course server from 19 Nov 19:20 UTC (every 5 minutes until about 22 Nov 22:00 UTC). Forecasts issued more than about 57 hours before the race (22 Nov 04:00 UTC) therefore come only from the manual samples.
 * **Hot/arid climate scope limitation:** All three late-season circuits (Las Vegas, Lusail, Yas Marina) are situated in hot, arid desert regions, so forecast-error patterns observed here reflect dry desert conditions rather than year-round European or tropical circuit variability.
 * **Circuit-level aggregation:** `dataset.csv` is aggregated per circuit and UTC hour, so it cannot distinguish teams or drivers.
+* **`OpenF1` sensor glitches:** `track_temperature` is `0.0` in 3 of 476 weather records of the five Las Vegas sessions; `normalise.sh` treats these as missing.
